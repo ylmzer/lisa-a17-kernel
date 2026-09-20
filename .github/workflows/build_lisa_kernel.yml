@@ -85,7 +85,7 @@ jobs:
             CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
             LLVM=1 \
             LLVM_IAS=1 \
-            Image dtbo.img
+            Image dtbs
 
       - name: Package with AnyKernel3
         run: |
@@ -112,3 +112,4 @@ jobs:
             Lisa_A17_HyperOS4_Kernel.zip
             kernel_src/out/arch/arm64/boot/Image
             kernel_src/out/arch/arm64/boot/dtbo.img
+          if-no-files-found: warn
