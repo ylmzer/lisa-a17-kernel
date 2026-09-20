@@ -21,7 +21,7 @@ jobs:
             g++-multilib gcc-multilib git gnupg gperf libelf-dev libncurses5-dev \
             libssl-dev lz4 liblz4-tool make ninja-build optipng pngquant \
             python3 python-is-python3 rsync squashfs-tools subversion unzip \
-            xz-utils zlib1g-dev pahole dtc device-tree-compiler
+            xz-utils zlib1g-dev pahole device-tree-compiler
 
       - name: Setup Clang Toolchain (AOSP Clang 18)
         run: |
