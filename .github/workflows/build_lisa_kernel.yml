@@ -58,14 +58,15 @@ jobs:
           export ARCH=arm64
           export SUBARCH=arm64
           
-          DEFCONFIG="vendor/lisa_user_defconfig"
-          if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
-            DEFCONFIG="vendor/lahaina-qgki_defconfig"
-          fi
-          echo "[+] Using defconfig: $DEFCONFIG"
-          
-          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 $DEFCONFIG
-          
+          echo "[+] Merging configs for Lisa (lahaina + xiaomi + lisa)..."
+          ARCH=arm64 scripts/kconfig/merge_config.sh -O out -m \
+            arch/arm64/configs/vendor/lahaina-qgki_defconfig \
+            arch/arm64/configs/vendor/xiaomi_QGKI.config \
+            arch/arm64/configs/vendor/lisa_QGKI.config
+
+          # Update config with default values for new symbols
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
+
           # Inject A17 options directly via scripts/config
           scripts/config --file out/.config \
             -e CONFIG_BPF \
