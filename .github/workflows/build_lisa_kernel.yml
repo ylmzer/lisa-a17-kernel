@@ -23,14 +23,12 @@ jobs:
             python3 python-is-python3 rsync squashfs-tools subversion unzip \
             xz-utils zlib1g-dev pahole device-tree-compiler
 
-      - name: Setup Clang Toolchain (AOSP Clang 18)
+      - name: Setup Clang Toolchain (AOSP Clang r487747c)
         run: |
-          mkdir -p /home/runner/toolchain/clang
+          mkdir -p /home/runner/toolchain
           cd /home/runner/toolchain
-          echo "[+] Downloading AOSP Clang toolchain..."
-          wget -q https://github.com/ZyC-Developers/Clang/releases/download/18.0.0-20240316/Clang-18.0.0.tar.gz -O clang.tar.gz || \
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r487747c.tar.gz -O clang.tar.gz
-          tar -C clang -xzf clang.tar.gz
+          echo "[+] Cloning official AOSP Clang toolchain..."
+          git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r487747c.git clang
           echo "/home/runner/toolchain/clang/bin" >> $GITHUB_PATH
 
       - name: Clone Kernel Source (SM8350/SM7325 LineageOS Tree)
