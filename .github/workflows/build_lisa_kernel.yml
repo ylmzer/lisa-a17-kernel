@@ -1,0 +1,116 @@
+name: Build Lisa Kernel (Android 17 & HyperOS 4.0)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Build Lisa A17 Kernel
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Builder Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex \
+            g++-multilib gcc-multilib git gnupg gperf libelf-dev libncurses5-dev \
+            libssl-dev lz4 liblz4-tool make ninja-build optipng pngquant \
+            python3 python-is-python3 rsync squashfs-tools subversion unzip \
+            xz-utils zlib1g-dev pahole dtc device-tree-compiler
+
+      - name: Setup Clang Toolchain (AOSP Clang 18)
+        run: |
+          mkdir -p /home/runner/toolchain/clang
+          cd /home/runner/toolchain
+          echo "[+] Downloading AOSP Clang toolchain..."
+          wget -q https://github.com/ZyC-Developers/Clang/releases/download/18.0.0-20240316/Clang-18.0.0.tar.gz -O clang.tar.gz || \
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r487747c.tar.gz -O clang.tar.gz
+          tar -C clang -xzf clang.tar.gz
+          echo "/home/runner/toolchain/clang/bin" >> $GITHUB_PATH
+
+      - name: Clone Kernel Source (SM8350/SM7325 LineageOS Tree)
+        run: |
+          echo "[+] Cloning Xiaomi SM8350/SM7325 kernel source..."
+          git clone --depth=1 https://github.com/LineageOS/android_kernel_xiaomi_sm8350.git -b lineage-22.1 kernel_src
+
+      - name: Apply Android 17 & HyperOS Patches
+        run: |
+          chmod +x scripts/patch_config.sh
+          # Find defconfigs for lisa / lahaina
+          cd kernel_src
+          CONFIG_TARGET=""
+          for cfg in arch/arm64/configs/vendor/lisa_user_defconfig arch/arm64/configs/vendor/lisa_defconfig arch/arm64/configs/vendor/lahaina-qgki_defconfig; do
+            if [ -f "$cfg" ]; then
+              CONFIG_TARGET="$cfg"
+              break
+            fi
+          done
+          echo "[+] Found target config: $CONFIG_TARGET"
+          ../scripts/patch_config.sh "$CONFIG_TARGET"
+
+      - name: Compile Kernel Image & DTBO
+        run: |
+          cd kernel_src
+          export PATH=/home/runner/toolchain/clang/bin:$PATH
+          export ARCH=arm64
+          export SUBARCH=arm64
+          
+          DEFCONFIG="vendor/lisa_user_defconfig"
+          if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
+            DEFCONFIG="vendor/lahaina-qgki_defconfig"
+          fi
+          echo "[+] Using defconfig: $DEFCONFIG"
+          
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 $DEFCONFIG
+          
+          # Inject A17 options directly via scripts/config
+          scripts/config --file out/.config \
+            -e CONFIG_BPF \
+            -e CONFIG_BPF_SYSCALL \
+            -e CONFIG_BPF_JIT \
+            -e CONFIG_CGROUP_BPF \
+            -e CONFIG_PSI \
+            -d CONFIG_MODVERSIONS \
+            -d CONFIG_MODULE_SIG \
+            -e CONFIG_SECURITY_SELINUX_DEVELOP
+            
+          make -j$(nproc --all) O=out \
+            ARCH=arm64 \
+            CC=clang \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+            LLVM=1 \
+            LLVM_IAS=1 \
+            Image dtbo.img
+
+      - name: Package with AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git package_dir
+          cd package_dir
+          # Configure AnyKernel for lisa
+          sed -i 's/device.name1=.*/device.name1=lisa/' anykernel.sh
+          sed -i 's/device.name2=.*/device.name2=2107119DC/' anykernel.sh
+          
+          # Copy outputs
+          cp ../kernel_src/out/arch/arm64/boot/Image .
+          if [ -f ../kernel_src/out/arch/arm64/boot/dtbo.img ]; then
+            cp ../kernel_src/out/arch/arm64/boot/dtbo.img .
+          fi
+          
+          # Create Flashable ZIP
+          zip -r9 ../Lisa_A17_HyperOS4_Kernel.zip * -x .git README.md
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lisa_A17_HyperOS4_Kernel
+          path: |
+            Lisa_A17_HyperOS4_Kernel.zip
+            kernel_src/out/arch/arm64/boot/Image
+            kernel_src/out/arch/arm64/boot/dtbo.img
