@@ -88,14 +88,6 @@ jobs:
             -e CONFIG_SCSI_UFS_CRYPTO_QTI \
             -e CONFIG_COMMON_CLK_QCOM \
             -e CONFIG_QCOM_SCM \
-            -e CONFIG_DRM_MSM \
-            -e CONFIG_DRM_MSM_DPU \
-            -e CONFIG_DRM_MSM_DSI \
-            -e CONFIG_MSM_MMRM \
-            -e CONFIG_DRM_PANEL \
-            -e CONFIG_BACKLIGHT_CLASS_DEVICE \
-            -e CONFIG_BACKLIGHT_GENERIC \
-            -e CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE \
             --set-str CONFIG_LOCALVERSION "-qgki-g5987d69e25da"
             
           make -j$(nproc --all) O=out \
