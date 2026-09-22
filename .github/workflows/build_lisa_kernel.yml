@@ -68,7 +68,7 @@ jobs:
           # Update config with default values for new symbols
           make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 
-          # Inject A17 & Monolithic Storage options directly via scripts/config
+          # Inject A17, Monolithic Display & Storage options directly via scripts/config
           scripts/config --file out/.config \
             -e CONFIG_BPF \
             -e CONFIG_BPF_SYSCALL \
@@ -77,6 +77,7 @@ jobs:
             -e CONFIG_PSI \
             -d CONFIG_MODVERSIONS \
             -d CONFIG_MODULE_SIG \
+            -e CONFIG_MODULE_FORCE_LOAD \
             -e CONFIG_SECURITY_SELINUX_DEVELOP \
             -e CONFIG_SCSI_UFSHCD \
             -e CONFIG_SCSI_UFSHCD_PLATFORM \
@@ -86,7 +87,16 @@ jobs:
             -e CONFIG_SCSI_UFS_CRYPTO \
             -e CONFIG_SCSI_UFS_CRYPTO_QTI \
             -e CONFIG_COMMON_CLK_QCOM \
-            -e CONFIG_QCOM_SCM
+            -e CONFIG_QCOM_SCM \
+            -e CONFIG_DRM_MSM \
+            -e CONFIG_DRM_MSM_DPU \
+            -e CONFIG_DRM_MSM_DSI \
+            -e CONFIG_MSM_MMRM \
+            -e CONFIG_DRM_PANEL \
+            -e CONFIG_BACKLIGHT_CLASS_DEVICE \
+            -e CONFIG_BACKLIGHT_GENERIC \
+            -e CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE \
+            --set-str CONFIG_LOCALVERSION "-qgki-g5987d69e25da"
             
           make -j$(nproc --all) O=out \
             ARCH=arm64 \
@@ -119,7 +129,7 @@ jobs:
           device.name2=2107119DC
           device.name3=2109119DG
           device.name4=2109119DI
-          device.name5=
+          device.name5=Xiaomi 11 Lite 5G NE
           supported.versions=
           supported.patchlevels=
           supported.vendorpatchlevels=
@@ -127,24 +137,34 @@ jobs:
 
           ### AnyKernel install
           # boot shell variables
-          BLOCK=boot;
-          IS_SLOT_DEVICE=auto;
-          RAMDISK_COMPRESSION=auto;
-          PATCH_VBMETA_FLAG=auto;
+          block=boot;
+          is_slot_device=auto;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
 
           # import functions/variables and setup patching - see for reference (DO NOT REMOVE)
           . tools/ak3-core.sh;
 
           # boot install
-          split_boot;
-          flash_boot;
+          dump_boot;
+          write_boot;
           ## end boot install
+
+          # Flash certified HyperOS DTBO (Display Panel Timing)
+          if [ -f dtbo ]; then
+            ui_print "Flashing certified HyperOS DTBO..."
+            flash_generic dtbo;
+          fi
           EOF
           
           # Copy outputs
           cp ../kernel_src/out/arch/arm64/boot/Image .
-          if [ -f ../kernel_src/out/arch/arm64/boot/dtbo.img ]; then
-            cp ../kernel_src/out/arch/arm64/boot/dtbo.img .
+          
+          # Copy certified HyperOS DTBO
+          if [ -f ../dtbo.img ]; then
+            cp ../dtbo.img ./dtbo
+          elif [ -f ../kernel_src/out/arch/arm64/boot/dtbo.img ]; then
+            cp ../kernel_src/out/arch/arm64/boot/dtbo.img ./dtbo
           fi
           
           # Find and copy lisa DTB if available
@@ -158,6 +178,7 @@ jobs:
           zip -r9 ../Lisa_A17_HyperOS4_Kernel.zip * -x .git README.md
 
       - name: Upload Kernel Artifact
+
         uses: actions/upload-artifact@v4
         with:
           name: Lisa_A17_HyperOS4_Kernel

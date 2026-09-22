@@ -60,4 +60,16 @@ set_config "CONFIG_SCSI_UFS_CRYPTO_QTI" "y"
 set_config "CONFIG_COMMON_CLK_QCOM" "y"
 set_config "CONFIG_QCOM_SCM" "y"
 
+# 7. Display & Touchscreen Subsystems (Direct hardware init without msm_drm.ko failure)
+set_config "CONFIG_DRM_MSM" "y"
+set_config "CONFIG_DRM_MSM_DPU" "y"
+set_config "CONFIG_DRM_MSM_DSI" "y"
+set_config "CONFIG_MSM_MMRM" "y"
+set_config "CONFIG_DRM_PANEL" "y"
+set_config "CONFIG_BACKLIGHT_CLASS_DEVICE" "y"
+set_config "CONFIG_BACKLIGHT_GENERIC" "y"
+set_config "CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE" "y"
+set_config "CONFIG_MODULE_FORCE_LOAD" "y"
+
 echo "[+] Config patching complete!"
+
