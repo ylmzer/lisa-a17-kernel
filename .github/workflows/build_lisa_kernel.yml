@@ -68,7 +68,7 @@ jobs:
           # Update config with default values for new symbols
           make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 
-          # Inject A17 options directly via scripts/config
+          # Inject A17 & Monolithic Storage options directly via scripts/config
           scripts/config --file out/.config \
             -e CONFIG_BPF \
             -e CONFIG_BPF_SYSCALL \
@@ -77,7 +77,16 @@ jobs:
             -e CONFIG_PSI \
             -d CONFIG_MODVERSIONS \
             -d CONFIG_MODULE_SIG \
-            -e CONFIG_SECURITY_SELINUX_DEVELOP
+            -e CONFIG_SECURITY_SELINUX_DEVELOP \
+            -e CONFIG_SCSI_UFSHCD \
+            -e CONFIG_SCSI_UFSHCD_PLATFORM \
+            -e CONFIG_SCSI_UFS_QCOM \
+            -e CONFIG_PHY_QCOM_UFS \
+            -e CONFIG_PHY_QCOM_UFS_QMP_V4_LAHAINA \
+            -e CONFIG_SCSI_UFS_CRYPTO \
+            -e CONFIG_SCSI_UFS_CRYPTO_QTI \
+            -e CONFIG_COMMON_CLK_QCOM \
+            -e CONFIG_QCOM_SCM
             
           make -j$(nproc --all) O=out \
             ARCH=arm64 \
@@ -129,6 +138,7 @@ jobs:
           # boot install
           split_boot;
           flash_boot;
+          flash_dtb;
           ## end boot install
           EOF
           
@@ -136,6 +146,13 @@ jobs:
           cp ../kernel_src/out/arch/arm64/boot/Image .
           if [ -f ../kernel_src/out/arch/arm64/boot/dtbo.img ]; then
             cp ../kernel_src/out/arch/arm64/boot/dtbo.img .
+          fi
+          
+          # Find and copy lisa DTB if available
+          LISA_DTB=$(find ../kernel_src/out/arch/arm64/boot/dts -name "*lisa*.dtb" -o -name "*7325*.dtb" | head -n 1)
+          if [ -n "$LISA_DTB" ] && [ -f "$LISA_DTB" ]; then
+            echo "[+] Found DTB: $LISA_DTB"
+            cp "$LISA_DTB" ./dtb
           fi
           
           # Create Flashable ZIP

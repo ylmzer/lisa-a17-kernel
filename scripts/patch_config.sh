@@ -49,4 +49,15 @@ set_config "CONFIG_MODULE_SIG_ALL" "n"
 # 5. SELinux permissive capability
 set_config "CONFIG_SECURITY_SELINUX_DEVELOP" "y"
 
+# 6. Built-in UFS Storage & Core SoC Drivers (Instant booting on both A16 & A17 without DLKM dependency)
+set_config "CONFIG_SCSI_UFSHCD" "y"
+set_config "CONFIG_SCSI_UFSHCD_PLATFORM" "y"
+set_config "CONFIG_SCSI_UFS_QCOM" "y"
+set_config "CONFIG_PHY_QCOM_UFS" "y"
+set_config "CONFIG_PHY_QCOM_UFS_QMP_V4_LAHAINA" "y"
+set_config "CONFIG_SCSI_UFS_CRYPTO" "y"
+set_config "CONFIG_SCSI_UFS_CRYPTO_QTI" "y"
+set_config "CONFIG_COMMON_CLK_QCOM" "y"
+set_config "CONFIG_QCOM_SCM" "y"
+
 echo "[+] Config patching complete!"
