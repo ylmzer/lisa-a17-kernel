@@ -138,7 +138,6 @@ jobs:
           # boot install
           split_boot;
           flash_boot;
-          flash_dtb;
           ## end boot install
           EOF
           
